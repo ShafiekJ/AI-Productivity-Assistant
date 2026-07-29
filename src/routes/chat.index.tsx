@@ -44,7 +44,7 @@ function ChatIndex() {
   }, [navigate]);
 
   return (
-    <div className="flex h-[calc(100vh-var(--header-h,0px))] min-h-0">
+    <div className="flex h-screen min-h-0">
       <ThreadList threads={threads} onChange={setThreads} />
       <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
         Opening your conversation…
