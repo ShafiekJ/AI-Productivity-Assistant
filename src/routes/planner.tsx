@@ -88,7 +88,6 @@ function PlannerPage() {
 
     const reordered = dayItems.map((t, i) => ({ ...t, order: i }));
     const byId = new Map(reordered.map((t) => [t.id, t]));
-    update(tasks.map((t) => byId.get(t.id) ?? t).filter((t) => t.id !== sourceId).concat(byId.get(sourceId) ? [] : []));
     update(tasks.map((t) => byId.get(t.id) ?? t));
   };
 
