@@ -1,8 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarPlus, Loader2, Plus, Trash2, Wand2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CalendarPlus, GripVertical, Loader2, Plus, Trash2, Wand2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -59,6 +59,8 @@ function PlannerPage() {
   const [hydrated, setHydrated] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftDay, setDraftDay] = useState("Today");
+  const [dragId, setDragId] = useState<string | null>(null);
+  const dragIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setTasks(loadTasks());
@@ -69,6 +71,31 @@ function PlannerPage() {
     setTasks(next);
     saveTasks(next);
   };
+
+  const reorder = (targetId: string) => {
+    const sourceId = dragIdRef.current;
+    if (!sourceId || sourceId === targetId) return;
+    const source = tasks.find((t) => t.id === sourceId);
+    const target = tasks.find((t) => t.id === targetId);
+    if (!source || !target) return;
+
+    const dayItems = tasks
+      .filter((t) => t.day === target.day && t.id !== sourceId)
+      .sort((a, b) => a.order - b.order);
+    const index = dayItems.findIndex((t) => t.id === targetId);
+    const moved = { ...source, day: target.day, priority: target.priority };
+    dayItems.splice(index, 0, moved);
+
+    const reordered = dayItems.map((t, i) => ({ ...t, order: i }));
+    const byId = new Map(reordered.map((t) => [t.id, t]));
+    update(tasks.map((t) => byId.get(t.id) ?? t).filter((t) => t.id !== sourceId).concat(byId.get(sourceId) ? [] : []));
+    update(tasks.map((t) => byId.get(t.id) ?? t));
+  };
+
+  const doneKeys = useMemo(
+    () => new Set(tasks.filter((t) => t.done).map((t) => `${t.day}::${t.title}`)),
+    [tasks],
+  );
 
   const run = useServerFn(generatePlan);
   const mutation = useMutation({
@@ -122,7 +149,7 @@ function PlannerPage() {
       name,
       items: tasks
         .filter((t) => t.day === name)
-        .sort((a, b) => priorityRank[a.priority] - priorityRank[b.priority] || a.order - b.order),
+        .sort((a, b) => a.order - b.order || priorityRank[a.priority] - priorityRank[b.priority]),
     }));
   }, [tasks]);
 
@@ -201,7 +228,15 @@ function PlannerPage() {
                     <span className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
                       {b.time}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm">{b.title}</span>
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 truncate text-sm",
+                        doneKeys.has(`${day.day}::${b.title}`) &&
+                          "text-muted-foreground line-through",
+                      )}
+                    >
+                      {b.title}
+                    </span>
                     <span
                       className={cn(
                         "shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider",
@@ -291,8 +326,28 @@ function PlannerPage() {
                 {day.items.map((task) => (
                   <li
                     key={task.id}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2"
+                    draggable
+                    onDragStart={() => {
+                      dragIdRef.current = task.id;
+                      setDragId(task.id);
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      reorder(task.id);
+                      dragIdRef.current = null;
+                      setDragId(null);
+                    }}
+                    onDragEnd={() => {
+                      dragIdRef.current = null;
+                      setDragId(null);
+                    }}
+                    className={cn(
+                      "flex cursor-grab items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 transition-opacity active:cursor-grabbing",
+                      dragId === task.id && "opacity-50",
+                    )}
                   >
+                    <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <Checkbox
                       checked={task.done}
                       aria-label="Toggle done"
