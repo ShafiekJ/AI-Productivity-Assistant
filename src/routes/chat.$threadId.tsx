@@ -52,7 +52,9 @@ function ChatThreadPage() {
     <div className="flex h-screen min-h-0">
       <ThreadList threads={threads} activeId={threadId} onChange={setThreads} />
       <div className="min-w-0 flex-1">
-        {thread && <ChatWindow key={thread.id} thread={thread} />}
+        {thread && (
+          <ChatWindow key={thread.id} thread={thread} onThreadsChange={setThreads} />
+        )}
       </div>
     </div>
   );

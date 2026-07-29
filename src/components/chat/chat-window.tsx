@@ -25,7 +25,13 @@ const STARTERS = [
   "Tell me a joke about deadlines",
 ];
 
-export function ChatWindow({ thread }: { thread: ChatThread }) {
+export function ChatWindow({
+  thread,
+  onThreadsChange,
+}: {
+  thread: ChatThread;
+  onThreadsChange?: (threads: ChatThread[]) => void;
+}) {
   const [input, setInput] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -50,13 +56,14 @@ export function ChatWindow({ thread }: { thread: ChatThread }) {
 
   useEffect(() => {
     if (!messages.length) return;
-    upsertThread({
+    const next = upsertThread({
       id: thread.id,
       title: titleFromMessages(messages as UIMessage[], thread.title),
       updatedAt: Date.now(),
       messages: messages as UIMessage[],
     });
-  }, [messages, status, thread.id, thread.title]);
+    onThreadsChange?.(next);
+  }, [messages, status, thread.id, thread.title, onThreadsChange]);
 
   const busy = status === "submitted" || status === "streaming";
 
