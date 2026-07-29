@@ -1,8 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Copy, Loader2, Wand2 } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, Loader2, Save, Trash2, Wand2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -18,6 +18,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { generateEmail } from "@/lib/ai.functions";
+import {
+  loadDrafts,
+  newDraftId,
+  saveDrafts,
+  type EmailDraft,
+} from "@/lib/draft-store";
 
 const TONES = [
   "Professional",
@@ -59,6 +65,42 @@ function EmailPage() {
   const [details, setDetails] = useState("");
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
+  const [drafts, setDrafts] = useState<EmailDraft[]>([]);
+
+  useEffect(() => {
+    setDrafts(loadDrafts());
+  }, []);
+
+  const persist = (next: EmailDraft[]) => {
+    setDrafts(next);
+    saveDrafts(next);
+  };
+
+  const saveDraft = () => {
+    const draft: EmailDraft = {
+      id: newDraftId(),
+      title: occasion.trim() || "Untitled draft",
+      occasion,
+      recipient,
+      tone,
+      length,
+      details,
+      body: result,
+      savedAt: Date.now(),
+    };
+    persist([draft, ...drafts]);
+    toast.success("Draft saved");
+  };
+
+  const openDraft = (draft: EmailDraft) => {
+    setOccasion(draft.occasion);
+    setRecipient(draft.recipient);
+    setTone(draft.tone);
+    setLength(draft.length);
+    setDetails(draft.details);
+    setResult(draft.body);
+    toast.success("Draft loaded");
+  };
 
   const run = useServerFn(generateEmail);
   const mutation = useMutation({
@@ -171,10 +213,16 @@ function EmailPage() {
               Draft
             </h2>
             {result && (
-              <Button variant="outline" size="sm" onClick={copy}>
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                Copy
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={saveDraft}>
+                  <Save className="h-4 w-4" />
+                  Save draft
+                </Button>
+                <Button variant="outline" size="sm" onClick={copy}>
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  Copy
+                </Button>
+              </div>
             )}
           </div>
           {result ? (
@@ -186,6 +234,40 @@ function EmailPage() {
           )}
         </div>
       </div>
+
+      {drafts.length > 0 && (
+        <section className="panel mt-6 p-6">
+          <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Saved drafts
+          </h2>
+          <ul className="mt-4 space-y-2">
+            {drafts.map((draft) => (
+              <li
+                key={draft.id}
+                className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2"
+              >
+                <button
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => openDraft(draft)}
+                >
+                  <span className="block truncate text-sm">{draft.title}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {draft.tone} · {new Date(draft.savedAt).toLocaleString()}
+                  </span>
+                </button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={`Delete draft ${draft.title}`}
+                  onClick={() => persist(drafts.filter((d) => d.id !== draft.id))}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
