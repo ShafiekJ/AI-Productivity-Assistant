@@ -39,6 +39,7 @@
   --color-ring-offset-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-crimson: var(--crimson);
   --color-priority-high: var(--priority-high);
   --color-priority-medium: var(--priority-medium);
   --color-priority-low: var(--priority-low);
@@ -105,6 +106,14 @@
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.8 0 0);
+
+  --crimson: oklch(0.55 0.19 18);
+  --gradient-crimson: radial-gradient(
+      110% 80% at 12% 0%,
+      oklch(0.55 0.19 18 / 22%) 0%,
+      transparent 60%
+    ),
+    radial-gradient(90% 70% at 100% 100%, oklch(0.5 0.16 12 / 16%) 0%, transparent 65%);
 }
 
 .dark {
@@ -122,6 +131,9 @@
 
   body {
     background-color: var(--color-background);
+    background-image: var(--gradient-crimson);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

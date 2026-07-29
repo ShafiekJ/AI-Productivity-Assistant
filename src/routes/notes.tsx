@@ -1,7 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, CheckCircle2, Gavel, ListChecks, Loader2, Sparkle } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Gavel,
+  ListChecks,
+  Loader2,
+  Mic,
+  Sparkle,
+  Square,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { MeetingSummary } from "@/lib/ai-types";
 import { summarizeNotes } from "@/lib/ai.functions";
+import { transcribe, useRecorder } from "@/lib/use-recorder";
 
 export const Route = createFileRoute("/notes")({
   head: () => ({
@@ -55,6 +65,39 @@ function Section({
 function NotesPage() {
   const [notes, setNotes] = useState("");
   const [summary, setSummary] = useState<MeetingSummary | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const { recording, start, stop } = useRecorder();
+
+  const toggleRecording = async () => {
+    if (!recording) {
+      try {
+        await start();
+        toast.success("Listening — speak your notes");
+      } catch {
+        toast.error("Microphone access is needed to record.");
+      }
+      return;
+    }
+    const blob = await stop();
+    if (!blob) {
+      toast.error("That recording was empty — please try again.");
+      return;
+    }
+    setTranscribing(true);
+    try {
+      const text = await transcribe(blob);
+      if (!text.trim()) {
+        toast.error("Nothing could be transcribed from that recording.");
+        return;
+      }
+      setNotes((prev) => (prev.trim() ? `${prev.trim()}\n\n${text}` : text).slice(0, 30000));
+      toast.success("Speech added to your notes");
+    } catch (error) {
+      toast.error((error as Error).message || "Could not transcribe that recording.");
+    } finally {
+      setTranscribing(false);
+    }
+  };
 
   const run = useServerFn(summarizeNotes);
   const mutation = useMutation({
@@ -85,6 +128,21 @@ function NotesPage() {
           />
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{notes.length} characters</span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={recording ? "destructive" : "outline"}
+                disabled={transcribing}
+                onClick={toggleRecording}
+              >
+                {transcribing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : recording ? (
+                  <Square className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+                {transcribing ? "Transcribing" : recording ? "Stop" : "Speak"}
+              </Button>
             <Button
               disabled={notes.trim().length < 20 || mutation.isPending}
               onClick={() => mutation.mutate()}
@@ -96,6 +154,7 @@ function NotesPage() {
               )}
               Summarize
             </Button>
+            </div>
           </div>
         </div>
 
