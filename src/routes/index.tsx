@@ -84,6 +84,32 @@ function Index() {
             </Link>
           ))}
         </div>
+
+        <section
+          aria-labelledby="responsible-ai"
+          className="panel mt-10 p-6 text-sm text-muted-foreground"
+        >
+          <h2 id="responsible-ai" className="text-sm font-semibold text-foreground">
+            Responsible AI
+          </h2>
+          <p className="mt-2 max-w-3xl">
+            Monocle&apos;s tools are powered by AI models that can be wrong, incomplete or out of
+            date. Treat every draft, summary, schedule and research digest as a starting point —
+            review and edit before sending or acting on it, especially for anything legal,
+            financial, medical or people-related.
+          </p>
+          <ul className="mt-3 max-w-3xl list-disc space-y-1 pl-5">
+            <li>
+              Don&apos;t paste confidential, personal or regulated data you wouldn&apos;t share with
+              a third-party AI provider.
+            </li>
+            <li>Voice notes and text you submit are sent to an AI provider for processing.</li>
+            <li>
+              AI output is not professional advice, and a human stays accountable for the final
+              decision.
+            </li>
+          </ul>
+        </section>
       </div>
     </div>
   );
