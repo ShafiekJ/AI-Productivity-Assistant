@@ -172,7 +172,7 @@ function NotesPage() {
           {summary && (
             <>
               <Section icon={Sparkle} title="Summary">
-                <p className="text-sm leading-relaxed">
+                <p className="break-words text-sm leading-relaxed">
                   {summary.summary || "No summary could be extracted."}
                 </p>
               </Section>
@@ -185,7 +185,7 @@ function NotesPage() {
                     {summary.keyPoints.map((p, i) => (
                       <li key={i} className="flex gap-2">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-foreground" />
-                        {p}
+                        <span className="min-w-0 break-words">{p}</span>
                       </li>
                     ))}
                   </ul>
@@ -198,7 +198,7 @@ function NotesPage() {
                 ) : (
                   <ul className="space-y-2 text-sm">
                     {summary.decisions.map((d, i) => (
-                      <li key={i} className="rounded-md bg-surface-2 px-3 py-2">
+                      <li key={i} className="break-words rounded-md bg-surface-2 px-3 py-2">
                         {d}
                       </li>
                     ))}
@@ -213,7 +213,7 @@ function NotesPage() {
                   <ul className="space-y-2 text-sm">
                     {summary.actionItems.map((a, i) => (
                       <li key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <span>{a.task}</span>
+                        <span className="min-w-0 break-words">{a.task}</span>
                         {a.owner && (
                           <span className="rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
                             {a.owner}
@@ -233,7 +233,7 @@ function NotesPage() {
                   <ul className="space-y-2 text-sm">
                     {summary.deadlines.map((d, i) => (
                       <li key={i} className="flex items-baseline justify-between gap-3">
-                        <span>{d.what}</span>
+                        <span className="min-w-0 break-words">{d.what}</span>
                         <span className="shrink-0 text-xs text-muted-foreground">{d.when}</span>
                       </li>
                     ))}

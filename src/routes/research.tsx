@@ -81,16 +81,17 @@ function ResearchPage() {
       {result && !mutation.isPending && (
         <div className="mt-8 space-y-6">
           <div className="panel p-6">
-            <h2 className="text-xl font-semibold">{result.title}</h2>
+            <h2 className="break-words text-xl font-semibold">{result.title}</h2>
             <a
               href={url}
               target="_blank"
               rel="noreferrer noopener"
-              className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline"
+              className="mt-1 inline-flex max-w-full items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline"
             >
-              {url} <ExternalLink className="h-3 w-3" />
+              <span className="truncate">{url}</span>
+              <ExternalLink className="h-3 w-3 shrink-0" />
             </a>
-            <p className="mt-4 text-sm leading-relaxed">{result.summary}</p>
+            <p className="mt-4 break-words text-sm leading-relaxed">{result.summary}</p>
             {result.topics.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">
                 {result.topics.map((t, i) => (
@@ -114,7 +115,7 @@ function ResearchPage() {
                 {result.takeaways.map((t, i) => (
                   <li key={i} className="flex gap-2">
                     <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-foreground" />
-                    {t}
+                    <span className="min-w-0 break-words">{t}</span>
                   </li>
                 ))}
               </ul>
@@ -132,9 +133,9 @@ function ResearchPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {result.recommendations.map((r, i) => (
                   <div key={i} className="rounded-lg border border-border bg-surface p-4">
-                    <p className="text-sm font-medium">{r.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{r.why}</p>
-                    <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
+                    <p className="break-words text-sm font-medium">{r.title}</p>
+                    <p className="mt-1 break-words text-xs text-muted-foreground">{r.why}</p>
+                    <p className="mt-2 break-words text-xs uppercase tracking-wider text-muted-foreground">
                       {r.where}
                     </p>
                   </div>
