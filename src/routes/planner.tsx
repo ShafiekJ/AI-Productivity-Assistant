@@ -61,35 +61,79 @@ function PlannerPage() {
   const [draftDay, setDraftDay] = useState("Today");
   const [dragId, setDragId] = useState<string | null>(null);
   const dragIdRef = useRef<string | null>(null);
+  const tasksRef = useRef<Task[]>([]);
 
   useEffect(() => {
     setTasks(loadTasks());
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
   const update = (next: Task[]) => {
     setTasks(next);
     saveTasks(next);
   };
 
-  const reorder = (targetId: string) => {
+  const renumber = (list: Task[]) => {
+    const counters = new Map<string, number>();
+    return list.map((t) => {
+      const n = counters.get(t.day) ?? 0;
+      counters.set(t.day, n + 1);
+      return { ...t, order: n };
+    });
+  };
+
+  /** Move the dragged task to sit before/after the hovered task, in any day. */
+  const moveOver = (targetId: string, after: boolean) => {
     const sourceId = dragIdRef.current;
     if (!sourceId || sourceId === targetId) return;
-    const source = tasks.find((t) => t.id === sourceId);
-    const target = tasks.find((t) => t.id === targetId);
+    const current = tasksRef.current;
+    const source = current.find((t) => t.id === sourceId);
+    const target = current.find((t) => t.id === targetId);
     if (!source || !target) return;
 
-    const dayItems = tasks
-      .filter((t) => t.day === target.day && t.id !== sourceId)
-      .sort((a, b) => a.order - b.order);
-    const index = dayItems.findIndex((t) => t.id === targetId);
-    const moved = { ...source, day: target.day, priority: target.priority };
-    dayItems.splice(index, 0, moved);
-
-    const reordered = dayItems.map((t, i) => ({ ...t, order: i }));
-    const byId = new Map(reordered.map((t) => [t.id, t]));
-    update(tasks.map((t) => byId.get(t.id) ?? t));
+    const rest = current.filter((t) => t.id !== sourceId);
+    const targetIndex = rest.findIndex((t) => t.id === targetId);
+    if (targetIndex === -1) return;
+    const insertAt = after ? targetIndex + 1 : targetIndex;
+    const moved: Task = { ...source, day: target.day };
+    const nextOrdered = [...rest.slice(0, insertAt), moved, ...rest.slice(insertAt)];
+    const next = renumber(nextOrdered);
+    if (JSON.stringify(next) === JSON.stringify(current)) return;
+    tasksRef.current = next;
+    update(next);
   };
+
+  /** Drop into empty space at the end of a day column. */
+  const moveToDayEnd = (dayName: string) => {
+    const sourceId = dragIdRef.current;
+    if (!sourceId) return;
+    const current = tasksRef.current;
+    const source = current.find((t) => t.id === sourceId);
+    if (!source) return;
+    const rest = current.filter((t) => t.id !== sourceId);
+    const lastIndex = rest.map((t) => t.day).lastIndexOf(dayName);
+    const insertAt = lastIndex === -1 ? rest.length : lastIndex + 1;
+    if (source.day === dayName && lastIndex !== -1 && rest[lastIndex]?.order === source.order - 1)
+      return;
+    const nextOrdered = [
+      ...rest.slice(0, insertAt),
+      { ...source, day: dayName },
+      ...rest.slice(insertAt),
+    ];
+    const next = renumber(nextOrdered);
+    tasksRef.current = next;
+    update(next);
+  };
+
+  const endDrag = () => {
+    dragIdRef.current = null;
+    setDragId(null);
+  };
+
 
   const doneKeys = useMemo(
     () => new Set(tasks.filter((t) => t.done).map((t) => `${t.day}::${t.title}`)),
