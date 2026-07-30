@@ -252,55 +252,72 @@ function PlannerPage() {
             </Button>
           </div>
 
-          {dayList.map((day) => (
-            <div key={day.day} className="panel p-6">
-              <div className="mb-1 flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold">{day.day}</h3>
-                <Button variant="outline" size="sm" onClick={() => addWholeDay(day)}>
-                  <CalendarPlus className="h-4 w-4" />
-                  Fill day
-                </Button>
-              </div>
-              <p className="mb-4 text-sm text-muted-foreground">{day.focus}</p>
-              <ul className="space-y-2">
-                {day.blocks.map((b, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2"
-                  >
-                    <span className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
-                      {b.time}
-                    </span>
-                    <span
-                      className={cn(
-                        "min-w-0 flex-1 truncate text-sm",
-                        doneKeys.has(`${day.day}::${b.title}`) &&
-                          "text-muted-foreground line-through",
-                      )}
-                    >
-                      {b.title}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider",
-                        priorityStyles[b.priority],
-                      )}
-                    >
-                      {b.priority}
-                    </span>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Add ${b.title}`}
-                      onClick={() => addBlock(day.day, b.time, b.title, b.priority)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+          {mutation.isPending && (
+            <div className="panel animate-fade-in space-y-3 p-6">
+              <div className="h-5 w-32 animate-pulse rounded bg-surface-2" />
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded-lg bg-surface-2" />
+              ))}
             </div>
-          ))}
+          )}
+
+          {!mutation.isPending &&
+            dayList.map((day) => (
+              <div key={day.day} className="panel animate-fade-in p-6">
+                <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                  <h3 className="truncate text-lg font-semibold">{day.day}</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => addWholeDay(day)}
+                  >
+                    <CalendarPlus className="h-4 w-4" />
+                    Fill day
+                  </Button>
+                </div>
+                <p className="mb-4 break-words text-sm text-muted-foreground">{day.focus}</p>
+                <ul className="space-y-2">
+                  {day.blocks.map((b, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-3 rounded-lg border border-border bg-surface px-3 py-2"
+                    >
+                      <span className="mt-0.5 w-24 shrink-0 font-mono text-xs text-muted-foreground">
+                        {b.time}
+                      </span>
+                      <span
+                        className={cn(
+                          "min-w-0 flex-1 break-words text-sm leading-snug",
+                          doneKeys.has(`${day.day}::${b.title}`) &&
+                            "text-muted-foreground line-through",
+                        )}
+                      >
+                        {b.title}
+                      </span>
+                      <span
+                        className={cn(
+                          "mt-0.5 shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider",
+                          priorityStyles[b.priority],
+                        )}
+                      >
+                        {b.priority}
+                      </span>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="shrink-0"
+                        aria-label={`Add ${b.title}`}
+                        onClick={() => addBlock(day.day, b.time, b.title, b.priority)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
         </div>
 
         <div className="panel space-y-6 p-6">
