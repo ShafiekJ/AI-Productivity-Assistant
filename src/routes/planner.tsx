@@ -357,92 +357,114 @@ function PlannerPage() {
 
           {days.map((day) => (
             <div key={day.name} className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
+                <h3 className="truncate text-sm font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   {day.name}
                 </h3>
-                <span className="text-xs text-muted-foreground">
+                <span className="shrink-0 text-xs text-muted-foreground">
                   {day.items.filter((t) => t.done).length}/{day.items.length} done
                 </span>
               </div>
-              <ul className="space-y-2">
+              <ul
+                className="min-h-12 space-y-2 rounded-lg transition-colors"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  moveToDayEnd(day.name);
+                  endDrag();
+                }}
+              >
                 {day.items.map((task) => (
                   <li
                     key={task.id}
                     draggable
-                    onDragStart={() => {
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
                       dragIdRef.current = task.id;
                       setDragId(task.id);
                     }}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      const box = e.currentTarget.getBoundingClientRect();
+                      moveOver(task.id, e.clientY > box.top + box.height / 2);
+                    }}
                     onDrop={(e) => {
                       e.preventDefault();
-                      reorder(task.id);
-                      dragIdRef.current = null;
-                      setDragId(null);
+                      e.stopPropagation();
+                      endDrag();
                     }}
-                    onDragEnd={() => {
-                      dragIdRef.current = null;
-                      setDragId(null);
-                    }}
+                    onDragEnd={endDrag}
                     className={cn(
-                      "flex cursor-grab items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 transition-opacity active:cursor-grabbing",
-                      dragId === task.id && "opacity-50",
+                      "flex cursor-grab items-start gap-3 rounded-lg border border-border bg-surface px-3 py-2",
+                      "transition-[opacity,box-shadow,transform,border-color] duration-200 ease-out active:cursor-grabbing",
+                      dragId === task.id
+                        ? "scale-[0.99] border-foreground/40 opacity-60 shadow-lg"
+                        : "hover:border-foreground/25",
                     )}
                   >
-                    <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <Checkbox
-                      checked={task.done}
-                      aria-label="Toggle done"
-                      onCheckedChange={(v) =>
-                        update(tasks.map((t) => (t.id === task.id ? { ...t, done: v === true } : t)))
-                      }
-                    />
-                    {task.time && (
-                      <span className="w-20 shrink-0 font-mono text-xs text-muted-foreground">
-                        {task.time}
-                      </span>
-                    )}
-                    <span
-                      className={cn(
-                        "min-w-0 flex-1 text-sm",
-                        task.done && "text-muted-foreground line-through",
+                    <GripVertical className="mt-1.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="mt-1.5 shrink-0">
+                      <Checkbox
+                        checked={task.done}
+                        aria-label="Toggle done"
+                        onCheckedChange={(v) =>
+                          update(
+                            tasks.map((t) => (t.id === task.id ? { ...t, done: v === true } : t)),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1 py-0.5">
+                      {task.time && (
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                          {task.time}
+                        </span>
                       )}
-                    >
-                      {task.title}
-                    </span>
-                    <Select
-                      value={task.priority}
-                      onValueChange={(v) =>
-                        update(
-                          tasks.map((t) =>
-                            t.id === task.id ? { ...t, priority: v as Priority } : t,
-                          ),
-                        )
-                      }
-                    >
-                      <SelectTrigger className="h-8 w-[104px] text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label="Delete task"
-                      onClick={() => update(tasks.filter((t) => t.id !== task.id))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <span
+                        className={cn(
+                          "break-words text-sm leading-snug",
+                          task.done && "text-muted-foreground line-through",
+                        )}
+                      >
+                        {task.title}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Select
+                        value={task.priority}
+                        onValueChange={(v) =>
+                          update(
+                            tasks.map((t) =>
+                              t.id === task.id ? { ...t, priority: v as Priority } : t,
+                            ),
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[100px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="Delete task"
+                        onClick={() => update(tasks.filter((t) => t.id !== task.id))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
+
         </div>
       </div>
     </div>
