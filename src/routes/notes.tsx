@@ -126,9 +126,9 @@ function NotesPage() {
             onChange={(e) => setNotes(e.target.value)}
             className="resize-none"
           />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-muted-foreground">{notes.length} characters</span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant={recording ? "destructive" : "outline"}
                 disabled={transcribing}
@@ -143,19 +143,20 @@ function NotesPage() {
                 )}
                 {transcribing ? "Transcribing" : recording ? "Stop" : "Speak"}
               </Button>
-            <Button
-              disabled={notes.trim().length < 20 || mutation.isPending}
-              onClick={() => mutation.mutate()}
-            >
-              {mutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkle className="h-4 w-4" />
-              )}
-              Summarize
-            </Button>
+              <Button
+                disabled={notes.trim().length < 20 || mutation.isPending}
+                onClick={() => mutation.mutate()}
+              >
+                {mutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkle className="h-4 w-4" />
+                )}
+                Summarize
+              </Button>
             </div>
           </div>
+
         </div>
 
         <div className="space-y-4">
