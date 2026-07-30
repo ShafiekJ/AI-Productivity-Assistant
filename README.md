@@ -47,3 +47,7 @@ meetings, plan your day and week, digest research links, and chat with a warm wo
 
 ## Built by
 - Lovable
+
+## Team members
+- Mogamat Shafiek Jabaar
+- Iesmaeel Adams
