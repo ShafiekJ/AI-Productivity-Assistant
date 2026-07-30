@@ -85,18 +85,22 @@ export async function runPlanner(input: { goals: string; mode: "daily" | "weekly
   return structured<GeneratedPlan>(
     planSchema,
     [
-      `Build a realistic ${input.mode} work schedule covering ${dayCount} day(s).`,
+      `Build a realistic ${input.mode} work schedule covering at most ${dayCount} day(s).`,
       input.mode === "daily"
         ? "Use 'Today' as the day name."
-        : "Use weekday names Monday through Friday.",
+        : "Use weekday names Monday through Friday, in order, starting at Monday.",
       `Working hours: ${input.hours}.`,
-      "Each day gets a one-line focus theme and 4-7 time blocks with concrete titles, ordered chronologically, each with a priority of high, medium or low. Include short breaks. Keep every title under 60 characters.",
+      "CRITICAL: schedule ONLY the work the user actually described. Never invent filler tasks, generic admin blocks, placeholder focus time or padding to fill the hours.",
+      "If the described workload only justifies two blocks, return two blocks. If it only justifies one day, return one day and omit the rest — a short, honest plan is correct; an inflated one is wrong.",
+      "Spread the described work sensibly across the available days rather than cramming it into day one, but do not duplicate a task across days unless the user implied it recurs.",
+      "Each returned day gets a one-line focus theme derived from that day's actual tasks, and its blocks ordered chronologically with a concrete title and a priority of high, medium or low. Keep every title under 60 characters. Add a break only when a day genuinely has several hours of work.",
       "Goals and workload:",
       input.goals,
     ].join("\n"),
     { days: [] },
   );
 }
+
 
 /* ---------------- Research assistant ---------------- */
 
