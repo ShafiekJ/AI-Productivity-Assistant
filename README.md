@@ -46,4 +46,4 @@ meetings, plan your day and week, digest research links, and chat with a warm wo
 - Tailwind CSS
 
 ## Built by
--Lovable
+- Lovable
