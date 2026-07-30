@@ -208,7 +208,7 @@ function EmailPage() {
         </div>
 
         <div className="panel flex min-h-[420px] flex-col p-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Draft
             </h2>
@@ -226,7 +226,7 @@ function EmailPage() {
             )}
           </div>
           {result ? (
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{result}</pre>
+            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{result}</pre>
           ) : (
             <p className="m-auto max-w-xs text-center text-sm text-muted-foreground">
               Your draft appears here. Change the tone and regenerate to compare versions.

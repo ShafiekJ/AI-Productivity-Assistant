@@ -126,9 +126,9 @@ function NotesPage() {
             onChange={(e) => setNotes(e.target.value)}
             className="resize-none"
           />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-muted-foreground">{notes.length} characters</span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant={recording ? "destructive" : "outline"}
                 disabled={transcribing}
@@ -143,19 +143,20 @@ function NotesPage() {
                 )}
                 {transcribing ? "Transcribing" : recording ? "Stop" : "Speak"}
               </Button>
-            <Button
-              disabled={notes.trim().length < 20 || mutation.isPending}
-              onClick={() => mutation.mutate()}
-            >
-              {mutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkle className="h-4 w-4" />
-              )}
-              Summarize
-            </Button>
+              <Button
+                disabled={notes.trim().length < 20 || mutation.isPending}
+                onClick={() => mutation.mutate()}
+              >
+                {mutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkle className="h-4 w-4" />
+                )}
+                Summarize
+              </Button>
             </div>
           </div>
+
         </div>
 
         <div className="space-y-4">
@@ -171,7 +172,7 @@ function NotesPage() {
           {summary && (
             <>
               <Section icon={Sparkle} title="Summary">
-                <p className="text-sm leading-relaxed">
+                <p className="break-words text-sm leading-relaxed">
                   {summary.summary || "No summary could be extracted."}
                 </p>
               </Section>
@@ -184,7 +185,7 @@ function NotesPage() {
                     {summary.keyPoints.map((p, i) => (
                       <li key={i} className="flex gap-2">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-foreground" />
-                        {p}
+                        <span className="min-w-0 break-words">{p}</span>
                       </li>
                     ))}
                   </ul>
@@ -197,7 +198,7 @@ function NotesPage() {
                 ) : (
                   <ul className="space-y-2 text-sm">
                     {summary.decisions.map((d, i) => (
-                      <li key={i} className="rounded-md bg-surface-2 px-3 py-2">
+                      <li key={i} className="break-words rounded-md bg-surface-2 px-3 py-2">
                         {d}
                       </li>
                     ))}
@@ -212,7 +213,7 @@ function NotesPage() {
                   <ul className="space-y-2 text-sm">
                     {summary.actionItems.map((a, i) => (
                       <li key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <span>{a.task}</span>
+                        <span className="min-w-0 break-words">{a.task}</span>
                         {a.owner && (
                           <span className="rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
                             {a.owner}
@@ -232,7 +233,7 @@ function NotesPage() {
                   <ul className="space-y-2 text-sm">
                     {summary.deadlines.map((d, i) => (
                       <li key={i} className="flex items-baseline justify-between gap-3">
-                        <span>{d.what}</span>
+                        <span className="min-w-0 break-words">{d.what}</span>
                         <span className="shrink-0 text-xs text-muted-foreground">{d.when}</span>
                       </li>
                     ))}

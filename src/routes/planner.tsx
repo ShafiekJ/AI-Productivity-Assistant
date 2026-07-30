@@ -61,35 +61,79 @@ function PlannerPage() {
   const [draftDay, setDraftDay] = useState("Today");
   const [dragId, setDragId] = useState<string | null>(null);
   const dragIdRef = useRef<string | null>(null);
+  const tasksRef = useRef<Task[]>([]);
 
   useEffect(() => {
     setTasks(loadTasks());
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
   const update = (next: Task[]) => {
     setTasks(next);
     saveTasks(next);
   };
 
-  const reorder = (targetId: string) => {
+  const renumber = (list: Task[]) => {
+    const counters = new Map<string, number>();
+    return list.map((t) => {
+      const n = counters.get(t.day) ?? 0;
+      counters.set(t.day, n + 1);
+      return { ...t, order: n };
+    });
+  };
+
+  /** Move the dragged task to sit before/after the hovered task, in any day. */
+  const moveOver = (targetId: string, after: boolean) => {
     const sourceId = dragIdRef.current;
     if (!sourceId || sourceId === targetId) return;
-    const source = tasks.find((t) => t.id === sourceId);
-    const target = tasks.find((t) => t.id === targetId);
+    const current = tasksRef.current;
+    const source = current.find((t) => t.id === sourceId);
+    const target = current.find((t) => t.id === targetId);
     if (!source || !target) return;
 
-    const dayItems = tasks
-      .filter((t) => t.day === target.day && t.id !== sourceId)
-      .sort((a, b) => a.order - b.order);
-    const index = dayItems.findIndex((t) => t.id === targetId);
-    const moved = { ...source, day: target.day, priority: target.priority };
-    dayItems.splice(index, 0, moved);
-
-    const reordered = dayItems.map((t, i) => ({ ...t, order: i }));
-    const byId = new Map(reordered.map((t) => [t.id, t]));
-    update(tasks.map((t) => byId.get(t.id) ?? t));
+    const rest = current.filter((t) => t.id !== sourceId);
+    const targetIndex = rest.findIndex((t) => t.id === targetId);
+    if (targetIndex === -1) return;
+    const insertAt = after ? targetIndex + 1 : targetIndex;
+    const moved: Task = { ...source, day: target.day };
+    const nextOrdered = [...rest.slice(0, insertAt), moved, ...rest.slice(insertAt)];
+    const next = renumber(nextOrdered);
+    if (JSON.stringify(next) === JSON.stringify(current)) return;
+    tasksRef.current = next;
+    update(next);
   };
+
+  /** Drop into empty space at the end of a day column. */
+  const moveToDayEnd = (dayName: string) => {
+    const sourceId = dragIdRef.current;
+    if (!sourceId) return;
+    const current = tasksRef.current;
+    const source = current.find((t) => t.id === sourceId);
+    if (!source) return;
+    const rest = current.filter((t) => t.id !== sourceId);
+    const lastIndex = rest.map((t) => t.day).lastIndexOf(dayName);
+    const insertAt = lastIndex === -1 ? rest.length : lastIndex + 1;
+    if (source.day === dayName && lastIndex !== -1 && rest[lastIndex]?.order === source.order - 1)
+      return;
+    const nextOrdered = [
+      ...rest.slice(0, insertAt),
+      { ...source, day: dayName },
+      ...rest.slice(insertAt),
+    ];
+    const next = renumber(nextOrdered);
+    tasksRef.current = next;
+    update(next);
+  };
+
+  const endDrag = () => {
+    dragIdRef.current = null;
+    setDragId(null);
+  };
+
 
   const doneKeys = useMemo(
     () => new Set(tasks.filter((t) => t.done).map((t) => `${t.day}::${t.title}`)),
@@ -208,55 +252,72 @@ function PlannerPage() {
             </Button>
           </div>
 
-          {dayList.map((day) => (
-            <div key={day.day} className="panel p-6">
-              <div className="mb-1 flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold">{day.day}</h3>
-                <Button variant="outline" size="sm" onClick={() => addWholeDay(day)}>
-                  <CalendarPlus className="h-4 w-4" />
-                  Fill day
-                </Button>
-              </div>
-              <p className="mb-4 text-sm text-muted-foreground">{day.focus}</p>
-              <ul className="space-y-2">
-                {day.blocks.map((b, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2"
-                  >
-                    <span className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
-                      {b.time}
-                    </span>
-                    <span
-                      className={cn(
-                        "min-w-0 flex-1 truncate text-sm",
-                        doneKeys.has(`${day.day}::${b.title}`) &&
-                          "text-muted-foreground line-through",
-                      )}
-                    >
-                      {b.title}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider",
-                        priorityStyles[b.priority],
-                      )}
-                    >
-                      {b.priority}
-                    </span>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Add ${b.title}`}
-                      onClick={() => addBlock(day.day, b.time, b.title, b.priority)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+          {mutation.isPending && (
+            <div className="panel animate-fade-in space-y-3 p-6">
+              <div className="h-5 w-32 animate-pulse rounded bg-surface-2" />
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded-lg bg-surface-2" />
+              ))}
             </div>
-          ))}
+          )}
+
+          {!mutation.isPending &&
+            dayList.map((day) => (
+              <div key={day.day} className="panel animate-fade-in p-6">
+                <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                  <h3 className="truncate text-lg font-semibold">{day.day}</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => addWholeDay(day)}
+                  >
+                    <CalendarPlus className="h-4 w-4" />
+                    Fill day
+                  </Button>
+                </div>
+                <p className="mb-4 break-words text-sm text-muted-foreground">{day.focus}</p>
+                <ul className="space-y-2">
+                  {day.blocks.map((b, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-3 rounded-lg border border-border bg-surface px-3 py-2"
+                    >
+                      <span className="mt-0.5 w-24 shrink-0 font-mono text-xs text-muted-foreground">
+                        {b.time}
+                      </span>
+                      <span
+                        className={cn(
+                          "min-w-0 flex-1 break-words text-sm leading-snug",
+                          doneKeys.has(`${day.day}::${b.title}`) &&
+                            "text-muted-foreground line-through",
+                        )}
+                      >
+                        {b.title}
+                      </span>
+                      <span
+                        className={cn(
+                          "mt-0.5 shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider",
+                          priorityStyles[b.priority],
+                        )}
+                      >
+                        {b.priority}
+                      </span>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="shrink-0"
+                        aria-label={`Add ${b.title}`}
+                        onClick={() => addBlock(day.day, b.time, b.title, b.priority)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
         </div>
 
         <div className="panel space-y-6 p-6">
@@ -313,92 +374,114 @@ function PlannerPage() {
 
           {days.map((day) => (
             <div key={day.name} className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
+                <h3 className="truncate text-sm font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   {day.name}
                 </h3>
-                <span className="text-xs text-muted-foreground">
+                <span className="shrink-0 text-xs text-muted-foreground">
                   {day.items.filter((t) => t.done).length}/{day.items.length} done
                 </span>
               </div>
-              <ul className="space-y-2">
+              <ul
+                className="min-h-12 space-y-2 rounded-lg transition-colors"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  moveToDayEnd(day.name);
+                  endDrag();
+                }}
+              >
                 {day.items.map((task) => (
                   <li
                     key={task.id}
                     draggable
-                    onDragStart={() => {
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
                       dragIdRef.current = task.id;
                       setDragId(task.id);
                     }}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      const box = e.currentTarget.getBoundingClientRect();
+                      moveOver(task.id, e.clientY > box.top + box.height / 2);
+                    }}
                     onDrop={(e) => {
                       e.preventDefault();
-                      reorder(task.id);
-                      dragIdRef.current = null;
-                      setDragId(null);
+                      e.stopPropagation();
+                      endDrag();
                     }}
-                    onDragEnd={() => {
-                      dragIdRef.current = null;
-                      setDragId(null);
-                    }}
+                    onDragEnd={endDrag}
                     className={cn(
-                      "flex cursor-grab items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 transition-opacity active:cursor-grabbing",
-                      dragId === task.id && "opacity-50",
+                      "flex cursor-grab items-start gap-3 rounded-lg border border-border bg-surface px-3 py-2",
+                      "transition-[opacity,box-shadow,transform,border-color] duration-200 ease-out active:cursor-grabbing",
+                      dragId === task.id
+                        ? "scale-[0.99] border-foreground/40 opacity-60 shadow-lg"
+                        : "hover:border-foreground/25",
                     )}
                   >
-                    <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <Checkbox
-                      checked={task.done}
-                      aria-label="Toggle done"
-                      onCheckedChange={(v) =>
-                        update(tasks.map((t) => (t.id === task.id ? { ...t, done: v === true } : t)))
-                      }
-                    />
-                    {task.time && (
-                      <span className="w-20 shrink-0 font-mono text-xs text-muted-foreground">
-                        {task.time}
-                      </span>
-                    )}
-                    <span
-                      className={cn(
-                        "min-w-0 flex-1 text-sm",
-                        task.done && "text-muted-foreground line-through",
+                    <GripVertical className="mt-1.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="mt-1.5 shrink-0">
+                      <Checkbox
+                        checked={task.done}
+                        aria-label="Toggle done"
+                        onCheckedChange={(v) =>
+                          update(
+                            tasks.map((t) => (t.id === task.id ? { ...t, done: v === true } : t)),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1 py-0.5">
+                      {task.time && (
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                          {task.time}
+                        </span>
                       )}
-                    >
-                      {task.title}
-                    </span>
-                    <Select
-                      value={task.priority}
-                      onValueChange={(v) =>
-                        update(
-                          tasks.map((t) =>
-                            t.id === task.id ? { ...t, priority: v as Priority } : t,
-                          ),
-                        )
-                      }
-                    >
-                      <SelectTrigger className="h-8 w-[104px] text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label="Delete task"
-                      onClick={() => update(tasks.filter((t) => t.id !== task.id))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <span
+                        className={cn(
+                          "break-words text-sm leading-snug",
+                          task.done && "text-muted-foreground line-through",
+                        )}
+                      >
+                        {task.title}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Select
+                        value={task.priority}
+                        onValueChange={(v) =>
+                          update(
+                            tasks.map((t) =>
+                              t.id === task.id ? { ...t, priority: v as Priority } : t,
+                            ),
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[100px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="Delete task"
+                        onClick={() => update(tasks.filter((t) => t.id !== task.id))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
+
         </div>
       </div>
     </div>
