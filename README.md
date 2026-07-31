@@ -1,4 +1,4 @@
-# AI-Powered-Assistant
+# AI Powered Assistant
 
 ## Features
 
