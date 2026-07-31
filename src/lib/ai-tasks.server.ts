@@ -134,6 +134,7 @@ export async function runResearch(url: string) {
         ? `Extracted page text:\n${article}`
         : "The page text could not be fetched. Reason from the URL, its slug and your own knowledge, and say so in the summary.",
       "Return the article title, a summary of about 120 words, the main takeaways, the core topics it covers, and 4 recommendations for further reading on similar topics (each with why it is relevant and where to find it, e.g. publication or site).",
+      "For each recommendation also return a 'url': a direct https link to that reading when you are confident it exists, otherwise null. Never invent a URL you are not confident about.",
     ].join("\n\n"),
     { title: url, summary: "", takeaways: [], topics: [], recommendations: [] },
   );
