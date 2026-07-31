@@ -131,15 +131,30 @@ function ResearchPage() {
                 </h3>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {result.recommendations.map((r, i) => (
-                  <div key={i} className="rounded-lg border border-border bg-surface p-4">
-                    <p className="break-words text-sm font-medium">{r.title}</p>
-                    <p className="mt-1 break-words text-xs text-muted-foreground">{r.why}</p>
-                    <p className="mt-2 break-words text-xs uppercase tracking-wider text-muted-foreground">
-                      {r.where}
-                    </p>
-                  </div>
-                ))}
+                {result.recommendations.map((r, i) => {
+                  const href =
+                    r.url && /^https?:\/\//i.test(r.url)
+                      ? r.url
+                      : `https://www.google.com/search?q=${encodeURIComponent(`${r.title} ${r.where}`)}`;
+                  return (
+                    <a
+                      key={i}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="group block rounded-lg border border-border bg-surface p-4 transition-colors hover:border-foreground/40"
+                    >
+                      <p className="flex items-start gap-1.5 break-words text-sm font-medium">
+                        <span className="min-w-0 group-hover:underline">{r.title}</span>
+                        <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                      </p>
+                      <p className="mt-1 break-words text-xs text-muted-foreground">{r.why}</p>
+                      <p className="mt-2 break-words text-xs uppercase tracking-wider text-muted-foreground">
+                        {r.where}
+                      </p>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -33,6 +33,13 @@ export const researchSchema = z.object({
   summary: z.string(),
   takeaways: z.array(z.string()),
   topics: z.array(z.string()),
-  recommendations: z.array(z.object({ title: z.string(), why: z.string(), where: z.string() })),
+  recommendations: z.array(
+    z.object({
+      title: z.string(),
+      why: z.string(),
+      where: z.string(),
+      url: z.string().nullable(),
+    }),
+  ),
 });
 export type ResearchResult = z.infer<typeof researchSchema>;
