@@ -1,7 +1,4 @@
-# Monocle
-
-Monocle is a sleek monochrome AI workspace for getting work out the door: draft emails, summarize
-meetings, plan your day and week, digest research links, and chat with a warm workplace assistant.
+# AI-Powered-Assistant
 
 ## Features
 
