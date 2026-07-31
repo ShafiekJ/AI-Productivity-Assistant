@@ -1,8 +1,8 @@
-# Monocle — AI Productivity Assistant
+# AI Productivity Assistant
 
 ## Project overview
 
-Monocle is a modern, dark monochrome productivity workspace that bundles the everyday
+A modern, dark monochrome productivity workspace that bundles the everyday
 writing, planning and research chores of knowledge work into one app. Instead of jumping
 between a mail client, a notes app, a to-do list and a chatbot, you get five focused AI
 tools behind a single sidebar, all sharing the same design system and local-first storage.
@@ -110,6 +110,4 @@ bun run format     # Prettier
 ## Built by
 - Lovable
 
-## Team members
-- Mogamat Shafiek Jabaar
-- Iesmaeel Adams
+
