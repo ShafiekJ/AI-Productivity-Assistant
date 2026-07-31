@@ -1,4 +1,4 @@
-# AI Powered Assistant
+# AI-Productivity-Assistant
 
 ## Features
 
